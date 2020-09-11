@@ -5,9 +5,11 @@
 import os
 import argparse
 parser = argparse.ArgumentParser(description='Get Dependency Graphs')
-parser.add_argument('filename', type=file)
+parser.add_argument('filename')
 # os.path.dirname()
 
+args = parser.parse_args()
+print(args.filename)
 with open(args.filename, "r") as f:
     code = f.read() 
 
@@ -19,6 +21,5 @@ print(code)
 #                     const=sum, default=max,
 #                     help='sum the integers (default: find the max)')
 
-# args = parser.parse_args()
 
 # print(args.accumulate(args.integers))
