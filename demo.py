@@ -6,79 +6,122 @@ import os
 import argparse
 from tree_sitter import Language, Parser
 
+DEBUG = False
 PY_LANGUAGE = Language('build/my-languages.so', 'python')
+LINEIDX = 0
+CHARIDX = 1
+
+libraries = {}
+
+
+def getcode(filename):
+    if DEBUG:
+        with open('samplecode.py', "r") as f:
+            code = f.read() 
+    else:
+        with open(filename, "r") as f:
+            code = f.read() 
+    return code
+
+
+def gettree(filename):
+    code = getcode(filename)
+    parser = Parser()
+    parser.set_language(PY_LANGUAGE)
+    tree = parser.parse(bytes(code, "utf8"))
+    if DEBUG:
+        help(parser.parse)
+        print(code)
+    return tree
+
+
+def getlibraries(filename):
+    code = getcode(filename)
+    tree = gettree(filename)
+    root_node = tree.root_node
+    if DEBUG:
+        print(root_node.sexp())
+        dir(root_node)
+        dir(tree)
+    root_node.end_byte
+    root_node.start_byte
+
+    if DEBUG:
+        for i in libraries:
+            print(i)
+            # print(dir(c))
+            break
+
+    # root_node.start_point
+    # root_node.end_point
+    # dir(tree)
+    lines = code.split('\n')
+
+    for c in root_node.children:
+        if c.type == "import_statement" or c.type == "import_from_statement":
+            # print(c.start_point)
+            # print(c.end_point)
+            sl = c.start_point[LINEIDX]
+            sc = c.start_point[CHARIDX]
+            el = c.end_point[LINEIDX]
+            ec = c.end_point[CHARIDX]
+            # print(lines[el][sc:ec])
+            line = (lines[el][sc:ec])
+            line = line.split()
+            importline = line[1]
+            # print(importline)
+            if filename not in libraries:
+                libraries[filename] = []
+                homedir = '.'.join(filename.split('/')[:-1])
+                if '.' in homedir:
+                    importline = homedir+'.'+importline
+            libraries[filename].append(importline)
+
+    return libraries
+
+
+def recurse(filename, directory):
+    path = os.path.join(directory, filename)
+    libraries = getlibraries(path)
+    print("Latest library")
+    print(libraries)
+    print(filename)
+    if filename in libraries:
+        for l in libraries[filename]:
+            library = '/'.join(l.split('.'))
+            suffix = '.py'
+            path = os.path.join(directory, library + suffix)
+            print("Path")
+            print(path)
+            if os.path.isfile(path):
+                print("path exists")
+                print(path)
+                directory, filename = os.path.split(path)
+                # print("dir"+directory)
+                # print("file"+filename)
+                libraries = recurse(filename, directory)
+    return libraries
+
 
 argparser = argparse.ArgumentParser(description='Get Dependency Graphs')
 argparser.add_argument('filename')
 # os.path.dirname()
-
 args = argparser.parse_args()
-directory, filename = os.path.split(args.filename)
-print('directory')
-print(directory)
-print(args.filename)
-print(type(args.filename))
 
-with open(args.filename, "r") as f:
-# with open('samplecode.py', "r") as f:
-    code = f.read() 
+homedirectory, filename = os.path.split(args.filename)
+if not homedirectory:
+    print("DIRECTORY is NONE")
+# print('directory')
+# print(directory)
+# print(args.filename)
+# print(type(args.filename))
 
-parser = Parser()
-parser.set_language(PY_LANGUAGE)
-tree = parser.parse(bytes(code, "utf8"))
-root_node = tree.root_node
-# help(parser.parse)
-
-
-# print(code)
-# print(root_node.sexp())
-
-dir(root_node)
-dir(tree)
-root_node.end_byte
-root_node.start_byte
-libraries = {}
-libraries[args.filename] = []
-        # for i in line:
-        #     print(libraries)
-
-
-    # print(dir(c))
-    # break
-    # if c.kind
-
-root_node.start_point
-root_node.end_point
-
-dir(tree)
-lines = code.split('\n')
-LINEIDX=0
-CHARIDX=1
-
-for c in root_node.children:
-    if c.type == "import_statement" or c.type == "import_from_statement":
-        # print(c.start_point)
-        # print(c.end_point)
-        sl=c.start_point[LINEIDX]
-        sc=c.start_point[CHARIDX]
-        el=c.end_point[LINEIDX]
-        ec=c.end_point[CHARIDX]
-        # print(lines[el][sc:ec])
-        line = (lines[el][sc:ec])
-        line = line.split()
-        importline = line[1]
-        # print(importline)
-        libraries[args.filename].append(importline)
-
+# libraries = getlibraries(args.filename)
+# print("Function works?")
+# print(libraries)
+recurse(filename, homedirectory)
+print("Recurse Function works?")
 print(libraries)
-
-
-for l in libraries[args.filename]:
-    library = '/'.join(l.split('.'))
-    suffix = '.py'
-    library = os.path.join(directory, library + suffix)
-    if os.path.isfile(library):
-        print(library)
 
 
 # sl=root_node.start_point[LINEIDX]
