@@ -12,6 +12,7 @@ LINEIDX = 0
 CHARIDX = 1
 
 libraries = {}
+graph = []
 
 
 def getcode(filename):
@@ -95,7 +96,6 @@ def file2package(directory, filename):
     return package
 
 
-
 def recurse(filename, directory, identifier):
     path = os.path.join(directory, filename)
     libraries = getlibraries(path)
@@ -106,6 +106,9 @@ def recurse(filename, directory, identifier):
     print(filename)
     key = package2file(directory, identifier)
     print(key)
+    print("DIR")
+    print(directory)
+    print(filename)
     # library = '/'.join(identifier.split('.'))
     # suffix = '.py'
     # path = os.path.join(directory, library + suffix)
@@ -136,6 +139,7 @@ args = argparser.parse_args()
 homedirectory, filename = os.path.split(args.filename)
 if not homedirectory:
     print("DIRECTORY is NONE")
+
 # print('directory')
 # print(directory)
 # print(args.filename)
