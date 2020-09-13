@@ -80,26 +80,51 @@ def getlibraries(filename):
     return libraries
 
 
-def recurse(filename, directory):
+def package2file(directory, package):
+    library = '/'.join(package.split('.'))
+    suffix = '.py'
+    path = os.path.join(library + suffix)
+    return path
+
+
+def file2package(directory, filename):
+    homedir = '.'.join(directory.split('/')[:-1])
+    package = filename.split('.')[0]
+    if '.' in homedir:
+        package = homedir+'.'+package
+    return package
+
+
+
+def recurse(filename, directory, identifier):
     path = os.path.join(directory, filename)
     libraries = getlibraries(path)
     print("Latest library")
     print(libraries)
+    print(identifier)
+    print("FN")
     print(filename)
-    if filename in libraries:
-        for l in libraries[filename]:
+    key = package2file(directory, identifier)
+    print(key)
+    # library = '/'.join(identifier.split('.'))
+    # suffix = '.py'
+    # path = os.path.join(directory, library + suffix)
+    if key in libraries:
+        for l in libraries[key]:
+            print('Loopy')
+            print(l)
             library = '/'.join(l.split('.'))
             suffix = '.py'
             path = os.path.join(directory, library + suffix)
-            print("Path")
-            print(path)
+            # print("Path")
+            # print(path)
             if os.path.isfile(path):
                 print("path exists")
                 print(path)
                 directory, filename = os.path.split(path)
                 # print("dir"+directory)
                 # print("file"+filename)
-                libraries = recurse(filename, directory)
+                libraries = recurse(filename, directory, l)
     return libraries
 
 
@@ -119,7 +144,9 @@ if not homedirectory:
 # libraries = getlibraries(args.filename)
 # print("Function works?")
 # print(libraries)
-recurse(filename, homedirectory)
+
+package = filename.split('.')[0]
+recurse(filename, homedirectory, package)
 print("Recurse Function works?")
 print(libraries)
 
