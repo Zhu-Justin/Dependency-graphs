@@ -1,3 +1,5 @@
+import os
+
 from tree_sitter import Language, Parser
 Language.build_library(
   # Store the library in the `build` directory
@@ -42,6 +44,21 @@ def hello():
 import sys
 """, "utf8"))
 
+DICT = {}
+
+def getcode(filename, DEBUG=True):
+    if DEBUG:
+        with open('samplecode.py', "r") as f:
+            code = f.read() 
+    else:
+        with open(filename, "r") as f:
+            code = f.read() 
+    return code
+
+
+code = getcode('samplecode.py')
+tree = parser.parse(bytes(code, "utf8"))
+
 # tree.sexp()
 dir(tree)
 
@@ -77,8 +94,12 @@ print(root_node.sexp())
 type(root_node)
 
 
-def traverse():
-    for c in root_node.children:
+def traverse(node):
+    code = getcode('samplecode.py')
+    lines = code.split('\n')
+    if node.type == "call":
+        pass
+    for c in node.children:
         if c.type == "expression_statement":
             # print(c)
             # print(c.child_by_field_id(1))
@@ -87,23 +108,58 @@ def traverse():
             # print(c.children)
             q = c.children[0]
             if q.type == "call":
-                # q.child_by_file_name('')
+                # q.child_by_field_name('')
                 # print(q)
-                # print(q.children)
-                attribute = q.children[0]
+                print(q.children)
+                # attribute = q.children[0]
+                attribute = q.child_by_field_name('function')
                 assert attribute.type == "attribute"
                 print(attribute)
                 # print(dir(attribute))
-                print(attribute.child_by_field_name('object'))
+                # print(attribute.child_by_field_name('object'))
                 obj = (attribute.child_by_field_name('object'))
-                function = (attribute.child_by_field_name('attribute'))
-                print(attribute.child_by_field_name('attribute'))
+                print(obj)
+                fun = (attribute.child_by_field_name('attribute'))
+                print(fun)
+                objs, obje = obj.start_point, obj.end_point
+                funs, fune = fun.start_point, fun.end_point
+                assert objs[0] == obje[0]
+                assert funs[0] == fune[0]
+                print("objs")
+                objx = (lines[objs[0]][objs[1]:obje[1]])
+                print(objx)
+                print("funs")
+                funx = (lines[funs[0]][funs[1]:fune[1]])
+                print(funx)
+                if objx not in DICT:
+                    DICT[objx] = []
+                DICT[objx].append(funx)
+
+                argument_list = q.child_by_field_name('arguments')
+                assert argument_list.type == "argument_list"
+                if argument_list.children:
+                    childlist = argument_list.children
+                    for argchild in childlist:
+                        print("HALLELUHAH")
+                        if argchild.type == "call":
+                            DICT = traverse(argchild)
+
+    return DICT
+
+
+
+
+                # print(attribute.child_by_field_name('attribute'))
 
             # q = c.walk()
             # print(dir(q))
             # print(q.)
 
 
+
+
 print("===============")
-traverse()
+traverse(root_node)
+print(DICT)
+
 
