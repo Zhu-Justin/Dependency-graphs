@@ -3,4 +3,10 @@
 # Justin Zhu
 import numpy as np
 import pandas as pd
-from numpy import random
+from math import random
+
+1 + 1
+import hello
+
+print("hello")
+
