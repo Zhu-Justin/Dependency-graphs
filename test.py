@@ -80,8 +80,7 @@ root_node.sexp()
 dir(root_node)
 root_node.child_by_field_id(1)
 
-print
-(root_node.child_by_field_name('dotted_name'))
+print (root_node.child_by_field_name('dotted_name'))
 
 # for c in root_node.children:
 #     if c.type == "expression" or c.type == "import_from_statement":
@@ -94,55 +93,91 @@ print(root_node.sexp())
 type(root_node)
 
 
-def traverse(node):
-    code = getcode('samplecode.py')
-    lines = code.split('\n')
-    if node.type == "call":
-        pass
-    for c in node.children:
-        if c.type == "expression_statement":
-            # print(c)
-            # print(c.child_by_field_id(1))
-            # print(dir(c))
-            # print(c.is_named)
-            # print(c.children)
-            q = c.children[0]
-            if q.type == "call":
-                # q.child_by_field_name('')
-                # print(q)
-                print(q.children)
-                # attribute = q.children[0]
-                attribute = q.child_by_field_name('function')
-                assert attribute.type == "attribute"
-                print(attribute)
-                # print(dir(attribute))
-                # print(attribute.child_by_field_name('object'))
-                obj = (attribute.child_by_field_name('object'))
-                print(obj)
-                fun = (attribute.child_by_field_name('attribute'))
-                print(fun)
-                objs, obje = obj.start_point, obj.end_point
-                funs, fune = fun.start_point, fun.end_point
-                assert objs[0] == obje[0]
-                assert funs[0] == fune[0]
-                print("objs")
-                objx = (lines[objs[0]][objs[1]:obje[1]])
-                print(objx)
-                print("funs")
-                funx = (lines[funs[0]][funs[1]:fune[1]])
-                print(funx)
-                if objx not in DICT:
-                    DICT[objx] = []
-                DICT[objx].append(funx)
+code = getcode('samplecode.py')
+lines = code.split('\n')
 
-                argument_list = q.child_by_field_name('arguments')
-                assert argument_list.type == "argument_list"
-                if argument_list.children:
-                    childlist = argument_list.children
-                    for argchild in childlist:
-                        print("HALLELUHAH")
-                        if argchild.type == "call":
-                            DICT = traverse(argchild)
+
+def traverse(node):
+    global DICT
+    if node.type == "call":
+        attribute, argument_list = node.child_by_field_name('function'), node.child_by_field_name('arguments')
+        assert attribute.type == "attribute"
+        assert argument_list.type == "argument_list"
+        obj = (attribute.child_by_field_name('object'))
+        print(obj)
+        fun = (attribute.child_by_field_name('attribute'))
+        print(fun)
+        objs, obje = obj.start_point, obj.end_point
+        funs, fune = fun.start_point, fun.end_point
+        assert objs[0] == obje[0]
+        assert funs[0] == fune[0]
+        print("objs")
+        objx = (lines[objs[0]][objs[1]:obje[1]])
+        print(objx)
+        print("funs")
+        funx = (lines[funs[0]][funs[1]:fune[1]])
+        print(funx)
+        if objx not in DICT:
+            DICT[objx] = []
+        DICT[objx].append(funx)
+        if argument_list.children:
+            childlist = argument_list.children
+            for argchild in childlist:
+                print("HALLELUHAH")
+                if argchild.type == "call":
+                    DICT = traverse(argchild)
+
+    if node.type == "function_definition":
+        name, parameters, body = node.child_by_field_name('name'), node.child_by_field_name('parameters'), node.child_by_field_name('body')
+
+    if node.type == "module" or node.type == "expression_statement":
+        for c in node.children:
+            traverse(c)
+
+    # for c in node.children:
+    #     if c.type == "expression_statement":
+    #         # print(c)
+    #         # print(c.child_by_field_id(1))
+    #         # print(dir(c))
+    #         # print(c.is_named)
+    #         # print(c.children)
+    #         q = c.children[0]
+    #         if q.type == "call":
+    #             # q.child_by_field_name('')
+    #             # print(q)
+    #             print(q.children)
+    #             # attribute = q.children[0]
+    #             attribute = q.child_by_field_name('function')
+    #             assert attribute.type == "attribute"
+    #             print(attribute)
+    #             # print(dir(attribute))
+    #             # print(attribute.child_by_field_name('object'))
+    #             obj = (attribute.child_by_field_name('object'))
+    #             print(obj)
+    #             fun = (attribute.child_by_field_name('attribute'))
+    #             print(fun)
+    #             objs, obje = obj.start_point, obj.end_point
+    #             funs, fune = fun.start_point, fun.end_point
+    #             assert objs[0] == obje[0]
+    #             assert funs[0] == fune[0]
+    #             print("objs")
+    #             objx = (lines[objs[0]][objs[1]:obje[1]])
+    #             print(objx)
+    #             print("funs")
+    #             funx = (lines[funs[0]][funs[1]:fune[1]])
+    #             print(funx)
+    #             if objx not in DICT:
+    #                 DICT[objx] = []
+    #             DICT[objx].append(funx)
+
+    #             argument_list = q.child_by_field_name('arguments')
+    #             assert argument_list.type == "argument_list"
+    #             if argument_list.children:
+    #                 childlist = argument_list.children
+    #                 for argchild in childlist:
+    #                     print("HALLELUHAH")
+    #                     if argchild.type == "call":
+    #                         traverse(argchild)
 
     return DICT
 
