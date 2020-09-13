@@ -1,7 +1,17 @@
 import bar
 bar.hello(bar.newperson())
 sys.exit(1)
-def hello():
+
+def one():
+    return
+
+def hello(x=bar.bob()):
+    print("Hello")
+    bar.wow(bar.newperson())
+    cool()
+    return
+
+def goodbye():
     print("Hello")
     bar.hello(bar.newperson())
     return
