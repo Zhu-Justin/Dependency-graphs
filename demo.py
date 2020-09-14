@@ -17,7 +17,7 @@ argparser.add_argument("-r", "--raw", action="store_true", help="view dependency
 args = argparser.parse_args()
 homedirectory, filename = os.path.split(args.filename)
 if len(homedirectory) > 1 and homedirectory[0:2] == './':
-    homedirectory = homedirectory.replace('.', os.getcwd())
+    homedirectory = homedirectory.replace('.', os.getcwd(), 1)
 
 package = filename.split('.')[0]
 if args.libraries:
