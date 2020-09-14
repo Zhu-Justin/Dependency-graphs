@@ -43,7 +43,7 @@ graph, which may give some undefined behavior
 ALIAS = {}
 
 
-def getcode(filename, DEBUG=False):
+def getcode(path, filename, DEBUG=False):
     """
     Get the python code as a string from file
     """
@@ -51,16 +51,16 @@ def getcode(filename, DEBUG=False):
     if DEBUG:
         filename = 'samplecode.py'
 
-    with open(filename, "r") as f:
+    with open(os.path.join(path, filename), "r") as f:
         code = f.read() 
     return code
 
 
-def gettree(filename, DEBUG=False):
+def gettree(path, filename, DEBUG=False):
     """
     Get the tree_sitter data from a file
     """
-    code = getcode(filename)
+    code = getcode(path, filename)
     parser = Parser()
     parser.set_language(PY_LANGUAGE)
     tree = parser.parse(bytes(code, "utf8"))
@@ -76,6 +76,9 @@ def getalias(node, lines, filename, DEBUG=False):
     """
     Get alias mappings for a file
     """
+    if DEBUG:
+        print("ALIAS")
+        print(filename)
     if node.type == "import_statement":
 
         if DEBUG:
@@ -149,13 +152,13 @@ def getalias(node, lines, filename, DEBUG=False):
     return ALIAS
 
 
-def getlibraries(filename, DEBUG=False):
+def getlibraries(path, filename, DEBUG=False):
     """
     Get library mappings for a file
     """
-    code = getcode(filename)
+    code = getcode(path, filename)
     lines = code.split('\n')
-    tree = gettree(filename)
+    tree = gettree(path, filename)
     root_node = tree.root_node
     getalias(root_node, lines, filename)
 
@@ -163,6 +166,8 @@ def getlibraries(filename, DEBUG=False):
         print(root_node.sexp())
         dir(root_node)
         dir(tree)
+        print("FILENAME")
+        print(filename)
 
     for c in root_node.children:
         if c.type == "import_statement" or c.type == "import_from_statement":
@@ -181,7 +186,7 @@ def getlibraries(filename, DEBUG=False):
                 if '.' in homedir:
                     importline = homedir+'.'+importline
 
-            if importline not in LIBRARIES:
+            if importline not in LIBRARIES[filename]:
                 LIBRARIES[filename].append(importline)
 
     return LIBRARIES
@@ -218,17 +223,18 @@ def file2package(file, DEBUG=False):
     return '.'.join(homedir.split('.')[:-1])
 
 
-def recurse(filename, directory, identifier, DEBUG=False):
+def recurse(path, filename, directory, identifier, DEBUG=False):
     """
     Recurse file structure, updating LIBRARIES with dependencies 
     """
-    print(filename)
-    print(directory)
-    print(identifier)
+    # print(filename)
+    # print(directory)
+    # print(identifier)
 
-    path = os.path.join(directory, filename)
-    LIBRARIES = getlibraries(path)
-    getfunctions(filename, directory)
+    newpath = os.path.join(path, directory)
+    LIBRARIES = getlibraries(newpath, filename)
+    # print(LIBRARIES)
+    getfunctions(path, filename, directory)
     key = package2file(identifier)
 
     if DEBUG:
@@ -245,7 +251,7 @@ def recurse(filename, directory, identifier, DEBUG=False):
         for i, l in enumerate(LIBRARIES[key]):
             library = '/'.join(l.split('.'))
             suffix = '.py'
-            path = os.path.join(directory, library + suffix)
+            file = os.path.join(path, directory, library + suffix)
 
             if DEBUG:
                 print('Loop ' + i)
@@ -253,9 +259,9 @@ def recurse(filename, directory, identifier, DEBUG=False):
                 print("Path")
                 print(path)
 
-            if os.path.isfile(path):
-                directory, filename = os.path.split(path)
-                LIBRARIES = recurse(filename, directory, l)
+            if os.path.isfile(file):
+                directory, filename = os.path.split(file)
+                LIBRARIES = recurse(path, filename, directory, l)
 
                 if DEBUG:
                     print("path exists")
@@ -411,37 +417,37 @@ def traverse(node, lines, directory, filename, DEBUG=False):
     return DICT
 
 
-def getfunctions(filename, directory, DEBUG=False):
+def getfunctions(path, filename, directory, DEBUG=False):
     """
     Traverse the tree, updating DICT with function mappings
     """
 
-    path = os.path.join(directory, filename)
-    code = getcode(path)
+    path = os.path.join(path, directory)
+    code = getcode(path, filename)
     lines = code.split('\n')
-    tree = gettree(path)
+    tree = gettree(path, filename)
 
     if DEBUG:
         print(lines)
         print(tree)
         print(tree.root_node.sexp())
 
-    getalias(tree.root_node, lines, path)
+    getalias(tree.root_node, lines, filename)
     x = traverse(tree.root_node, lines, directory, filename)
     # print(x)
     return x
 
 
-def getgraph(filename, directory, identifier, DEBUG=False,
+def getgraph(path, filename, directory, identifier, DEBUG=False,
              hasused=True, hasstdlib=True, hasstdsub=True,
              nopretty=False):
     """
     Get the graph using DICT, LIBRARIES, and ALIAS values
     """
-    LIBRARIES = recurse(filename, directory, identifier)
-    path = os.path.join(directory, filename)
+    LIBRARIES = recurse(path, filename, directory, identifier)
+    source = os.path.join(directory, filename)
     DFS = []
-    stack = [path]
+    stack = [source]
     graphs = [[]]
     intermediary = set()
     g = [[]]
