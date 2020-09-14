@@ -46,7 +46,7 @@ import sys
 
 DICT = {}
 
-def getcode(filename, DEBUG=True):
+def getcode(filename, DEBUG=False):
     if DEBUG:
         with open('samplecode.py', "r") as f:
             code = f.read() 
@@ -89,12 +89,87 @@ print (root_node.child_by_field_name('dotted_name'))
 # ()
 
 
-print(root_node.sexp())
 type(root_node)
+tree = parser.parse(bytes(code, "utf8"))
+root_node = tree.root_node
+print("===============")
+# print(root_node.sexp())
 
 
 code = getcode('samplecode.py')
+code = getcode('importbonanza.py')
 lines = code.split('\n')
+tree = parser.parse(bytes(code, "utf8"))
+root_node = tree.root_node
+print(root_node.sexp())
+
+
+packages=[]
+packages
+alias = {}
+alias
+imports = {}
+imports
+
+def getalias(node):
+    if node.type == "import_statement":
+        # print(node)
+        # print(node.children)
+        for c in node.children:
+            if c.type == "dotted_name":
+                cs, ce = c.start_point, c.end_point
+                assert cs[0] == ce[0]
+                cf = (lines[cs[0]][cs[1]:ce[1]])
+                packages.append(cf)
+            if c.type == "aliased_import":
+                for c1 in c.children:
+                    if c1.type == "dotted_name":
+                        # print(c)
+                        # print(c.children)
+                        cs, ce = c1.start_point, c1.end_point
+                        assert cs[0] == ce[0]
+                        cf = (lines[cs[0]][cs[1]:ce[1]])
+                        p = cf
+                        packages.append(cf)
+                    if c1.type == "identifier":
+                        cs, ce = c1.start_point, c1.end_point
+                        assert cs[0] == ce[0]
+                        cf = (lines[cs[0]][cs[1]:ce[1]])
+                        alias[cf] = p
+
+    if node.type == "import_from_statement":
+        print(node)
+        print(node.children)
+        foundlib = False
+        for c in node.children:
+            if c.type == "dotted_name":
+                cs, ce = c.start_point, c.end_point
+                assert cs[0] == ce[0]
+                cf = (lines[cs[0]][cs[1]:ce[1]])
+                if not foundlib:
+                    p1 = cf
+                    packages.append(cf)
+                else:
+                    if p1 not in imports:
+                        imports[p1] = []
+                    else:
+                        imports[p1].append(cf)
+            if c.type == "import":
+                foundlib = True
+
+
+
+
+
+                
+
+    if node.type == "module" or node.type == "expression_statement":
+        # print("expression")
+        # print(node.children)
+        for c in node.children:
+            getalias(c)
+
+    return packages
 
 
 def traverse(node):
@@ -252,7 +327,8 @@ def traverse(node):
 
 
 print("===============")
-traverse(root_node)
+# traverse(root_node)
+getalias(root_node)
 print(DICT)
 
 

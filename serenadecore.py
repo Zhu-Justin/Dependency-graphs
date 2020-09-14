@@ -11,7 +11,8 @@ LINEIDX = 0
 CHARIDX = 1
 
 libraries = {}
-graph = []
+# graph = []
+packages = []
 # DICT Contains all the function inherited from that module
 # i.e. DICT[module] == [func1, func2, func3]
 # module.func1, module.func2, module.func3 have been called
@@ -43,23 +44,92 @@ def gettree(filename):
         print(code)
     return tree
 
+def getalias(node, lines, filename):
+    if node.type == "import_statement":
+        # print(node)
+        # print(node.children)
+        for c in node.children:
+            if c.type == "dotted_name":
+                cs, ce = c.start_point, c.end_point
+                assert cs[0] == ce[0]
+                cf = (lines[cs[0]][cs[1]:ce[1]])
+                # packages.append(cf)
+                if filename not in libraries:
+                    libraries[filename] = []
+                if cf not in libraries[filename]:
+                    libraries[filename].append(cf)
+            if c.type == "aliased_import":
+                for c1 in c.children:
+                    if c1.type == "dotted_name":
+                        # print(c)
+                        # print(c.children)
+                        cs, ce = c1.start_point, c1.end_point
+                        assert cs[0] == ce[0]
+                        cf = (lines[cs[0]][cs[1]:ce[1]])
+                        p = cf
+                        if filename not in libraries:
+                            libraries[filename] = []
+                        if cf not in libraries[filename]:
+                            libraries[filename].append(cf)
+                        # if cf not in packages:
+                        #     packages.append(cf)
+                    if c1.type == "identifier":
+                        cs, ce = c1.start_point, c1.end_point
+                        assert cs[0] == ce[0]
+                        cf = (lines[cs[0]][cs[1]:ce[1]])
+                        alias[cf] = p
+
+    if node.type == "import_from_statement":
+        # print(node)
+        # print(node.children)
+        foundlib = False
+        for c in node.children:
+            if c.type == "import":
+                foundlib = True
+            if c.type == "dotted_name":
+                cs, ce = c.start_point, c.end_point
+                assert cs[0] == ce[0]
+                cf = (lines[cs[0]][cs[1]:ce[1]])
+                if not foundlib:
+                    p1 = cf
+                    if filename not in libraries:
+                        libraries[filename] = []
+                    if cf not in libraries[filename]:
+                        libraries[filename].append(cf)
+                    # packages.append(cf)
+                    # print("Packages")
+                    # print(packages)
+                else:
+                    if p1 not in DICT:
+                        DICT[p1] = []
+                    if cf not in DICT[p1]:
+                        # print("ADDING " + cf +" in "+p1)
+                        # print(DICT)
+                        DICT[p1].append(cf)
+    if node.type == "module" or node.type == "expression_statement":
+        # print("expression")
+        # print(node.children)
+        for c in node.children:
+            getalias(c, lines, filename)
+    return alias
 
 def getlibraries(filename):
     code = getcode(filename)
     lines = code.split('\n')
     tree = gettree(filename)
     root_node = tree.root_node
+    getalias(root_node, lines, filename)
 
-    if DEBUG:
-        print(root_node.sexp())
-        dir(root_node)
-        dir(tree)
-        root_node.end_byte
-        root_node.start_byte
-        for i in libraries:
-            print(i)
-            # print(dir(c))
-            break
+    # if DEBUG:
+    #     print(root_node.sexp())
+    #     dir(root_node)
+    #     dir(tree)
+    #     root_node.end_byte
+    #     root_node.start_byte
+    #     for i in libraries:
+    #         print(i)
+    #         # print(dir(c))
+    #         break
 
     # root_node.start_point
     # root_node.end_point
@@ -90,6 +160,7 @@ def getlibraries(filename):
                 libraries[filename].append(importline)
 
     return libraries
+
 
 
 def package2file(package):
@@ -145,120 +216,123 @@ def recurse(filename, directory, identifier):
     return libraries
 
 
+def traverse(node, lines, directory, filename):
+    global DICT
+    # print("Great")
+    # print(lines)
+    if node.type == "call":
+        # print(node)
+        # print("callchildren")
+        # print(node.children)
 
-def getfunctions(filename, directory):
-    def traverse(node):
-        global DICT
-        # print("Great")
-        # print(lines)
-        if node.type == "call":
-            # print(node)
-            # print("callchildren")
-            # print(node.children)
+        attribute, argument_list = node.child_by_field_name('function'), node.child_by_field_name('arguments')
+        # print('---------------')
+        # print(attribute.type)
+        # print(attribute)
+        # print(attribute.children)
+        assert argument_list.type == "argument_list"
+        if attribute.type == "attribute":
+            # print("Good")
+            assert attribute.type == "attribute"
+            obj = (attribute.child_by_field_name('object'))
+            # print(obj)
+            fun = (attribute.child_by_field_name('attribute'))
+            # print(fun)
+            # if attribute.type == "attribute":
+            objs, obje = obj.start_point, obj.end_point
+            funs, fune = fun.start_point, fun.end_point
+            # objs, obje = obj.start_point, obj.end_point
+            # funs, fune = fun.start_point, fun.end_point
+            # print("great")
+            # print(objs, obje)
+            # print(funs, fune)
+            assert objs[0] == obje[0]
+            assert funs[0] == fune[0]
+            # print("objs")
+            objx = (lines[objs[0]][objs[1]:obje[1]])
+            # print(objx)
+            # print("funs")
+            funx = (lines[funs[0]][funs[1]:fune[1]])
+            # print(funx)
+            if objx in alias:
+                objx = alias[objx]
+            if objx not in DICT and objx:
+                DICT[objx] = []
 
-            attribute, argument_list = node.child_by_field_name('function'), node.child_by_field_name('arguments')
-            # print('---------------')
-            # print(attribute.type)
-            # print(attribute)
-            # print(attribute.children)
-            assert argument_list.type == "argument_list"
-            if attribute.type == "attribute":
-                # print("Good")
-                assert attribute.type == "attribute"
-                obj = (attribute.child_by_field_name('object'))
-                # print(obj)
-                fun = (attribute.child_by_field_name('attribute'))
-                # print(fun)
-                # if attribute.type == "attribute":
-                objs, obje = obj.start_point, obj.end_point
-                funs, fune = fun.start_point, fun.end_point
-                # objs, obje = obj.start_point, obj.end_point
-                # funs, fune = fun.start_point, fun.end_point
-                # print("great")
-                # print(objs, obje)
-                # print(funs, fune)
-                assert objs[0] == obje[0]
-                assert funs[0] == fune[0]
-                # print("objs")
-                objx = (lines[objs[0]][objs[1]:obje[1]])
-                # print(objx)
-                # print("funs")
-                funx = (lines[funs[0]][funs[1]:fune[1]])
-                # print(funx)
-                if objx not in DICT:
-                    DICT[objx] = []
-
-                if funx not in DICT[objx]:
-                    DICT[objx].append(funx)
-            else:
-                funs, fune = attribute.start_point, attribute.end_point
-                # print(funs, fune)
-                assert funs[0] == fune[0]
-                funx = (lines[funs[0]][funs[1]:fune[1]])
-                if 0 not in DICT:
-                    DICT[0] = []
-                if funx not in DICT[0]:
-                    DICT[0].append(funx)
-
-            if argument_list.children:
-                childlist = argument_list.children
-                for argchild in childlist:
-                    # print("HALLELUHAH")
-                    if argchild.type == "call":
-                        DICT = traverse(argchild)
-
-        if node.type == "function_definition":
-            # print("yes!")
-            # print(node.children)
-            name, parameters, body = node.child_by_field_name('name'), node.child_by_field_name('parameters'), node.children[-1]
-            funs, fune = name.start_point, name.end_point
+            if funx not in DICT[objx]:
+                DICT[objx].append(funx)
+        else:
+            funs, fune = attribute.start_point, attribute.end_point
             # print(funs, fune)
             assert funs[0] == fune[0]
             funx = (lines[funs[0]][funs[1]:fune[1]])
-            # print("functions")
-            # print(parameters)
-            # print("Name")
-            if funx in DICT[0]:
-                key = file2package(filename)
-                if directory:
-                    key = directory + '.' + key
-                print(key)
-                if key not in DICT:
-                    DICT[key] = []
-                if funx not in DICT[key]:
-                    DICT[key].append(funx)
+            if 0 not in DICT:
+                DICT[0] = []
+            if funx not in DICT[0]:
+                DICT[0].append(funx)
 
-            for c in parameters.children:
-                if c.type == "default_parameter":
-                    for c1 in c.children:
-                        traverse(c1)
+        if argument_list.children:
+            childlist = argument_list.children
+            for argchild in childlist:
+                # print("HALLELUHAH")
+                if argchild.type == "call":
+                    DICT = traverse(argchild, lines,
+                                    directory, filename)
 
-            # print("body")
-            # print(name)
-            # print(parameters)
-            # print(body)
-            # print("children")
-            # print(body.children)
-            for c in body.children:
-                # print("body2")
-                # print(c)
-                traverse(c)
-                    # print("children")
-                    # print(c.children)
+    if node.type == "function_definition":
+        # print("yes!")
+        # print(node.children)
+        name, parameters, body = node.child_by_field_name('name'), node.child_by_field_name('parameters'), node.children[-1]
+        funs, fune = name.start_point, name.end_point
+        # print(funs, fune)
+        assert funs[0] == fune[0]
+        funx = (lines[funs[0]][funs[1]:fune[1]])
+        # print("functions")
+        # print(parameters)
+        # print("Name")
+        if funx in DICT[0]:
+            key = file2package(filename)
+            if directory:
+                key = directory + '.' + key
+            # print(key)
+            if key not in DICT:
+                DICT[key] = []
+            if funx not in DICT[key]:
+                DICT[key].append(funx)
 
-            # print(parameters.children)
-            # print(parameters.children[0])
-            if parameters and parameters.child_by_field_name('values'):
-                # print("parameters")
-                values = parameters.child_by_field_name('values')
-                traverse(values)
+        for c in parameters.children:
+            if c.type == "default_parameter":
+                for c1 in c.children:
+                    traverse(c1, lines, directory, filename)
 
-        if node.type == "module" or node.type == "expression_statement":
-            # print("expression")
-            # print(node.children)
-            for c in node.children:
-                traverse(c)
-        return DICT
+        # print("body")
+        # print(name)
+        # print(parameters)
+        # print(body)
+        # print("children")
+        # print(body.children)
+        for c in body.children:
+            # print("body2")
+            # print(c)
+            traverse(c, lines, directory, filename)
+                # print("children")
+                # print(c.children)
+
+        # print(parameters.children)
+        # print(parameters.children[0])
+        if parameters and parameters.child_by_field_name('values'):
+            # print("parameters")
+            values = parameters.child_by_field_name('values')
+            traverse(values, lines, directory, filename)
+
+    if node.type == "module" or node.type == "expression_statement":
+        # print("expression")
+        # print(node.children)
+        for c in node.children:
+            traverse(c, lines, directory, filename)
+    return DICT
+
+def getfunctions(filename, directory):
 
     path = os.path.join(directory, filename)
     code = getcode(path)
@@ -267,7 +341,9 @@ def getfunctions(filename, directory):
     tree = gettree(path)
     # print(tree)
     # print(tree.root_node.sexp())
-    x = traverse(tree.root_node)
+    # alias = []
+    getalias(tree.root_node, lines, path)
+    x = traverse(tree.root_node, lines, directory, filename)
     # print(x)
     return x
 
