@@ -4,6 +4,7 @@
 
 import os
 from tree_sitter import Language, Parser
+from stdlib_list import stdlib_list
 
 PY_LANGUAGE = Language('build/my-languages.so', 'python')
 LINEIDX = 0
@@ -105,6 +106,7 @@ def file2package(file):
 def recurse(filename, directory, identifier):
     path = os.path.join(directory, filename)
     libraries = getlibraries(path)
+    getfunctions(filename, directory)
     # print("Latest library")
     # print(libraries)
     # print(identifier)
@@ -203,8 +205,16 @@ def getfunctions(filename, directory):
             # print("yes!")
             # print(node.children)
             name, parameters, body = node.child_by_field_name('name'), node.child_by_field_name('parameters'), node.children[-1]
+            funs, fune = name.start_point, name.end_point
+            # print(funs, fune)
+            assert funs[0] == fune[0]
+            funx = (lines[funs[0]][funs[1]:fune[1]])
             # print("functions")
             # print(parameters)
+            # print("Name")
+            if funx in DICT[0]:
+                DICT[file2package(filename)] = funx
+
             for c in parameters.children:
                 if c.type == "default_parameter":
                     for c1 in c.children:
@@ -255,6 +265,7 @@ def getgraph(filename, directory, identifier):
     DFS = []
     stack = [path]
     graphs = [[]]
+    intermediary = set()
     g = [[]]
     n = [0]
     
@@ -263,10 +274,16 @@ def getgraph(filename, directory, identifier):
         x = list(graphs[-1])
         x.append(file2package(s))
         # print(x)
+        print("GRAPHS")
+        print(graphs)
         graphs.append(x)
+        print("S")
+        print(s)
         # graphs.append(graphs[-1].append(s))
         # if s in libraries and s not in DFS:
         if s in libraries and s not in stack: 
+            print("ADDED" + file2package(s))
+            intermediary.add(file2package(s))
             # oldgraphs = list(graphs)
             # oldso = list(oldgraphs[-1])
             # n.append(len(graphs)-1)
@@ -292,13 +309,35 @@ def getgraph(filename, directory, identifier):
             # graphs.pop()
         else:
             x = graphs.pop()
-            if x not in g:
-                g.append(x)
+            print("GOOD X")
+            print(x)
+            print(intermediary)
+            if x[::-1] not in g and x[-1] not in intermediary:
+                g.append(x[::-1])
+            # if x not in g:
         if s not in DFS:
             DFS.append(s)
         # graphs.pop()
         #     print(graphs)
         #     DFS.pop()
+    for graph in g:
+        # print(graph)
+        if not graph:
+            continue
+        x = graph[0]
+        stdlib = stdlib_list("3.8")
+        if graph[0] in stdlib:
+            graph[0] += " (stdlib)"
+        if x in DICT:
+            graph[0] = graph[0]+" "+str(DICT[x])
+        else:
+            graph[0] += " (unused)"
+        # for x, i in enumerate(graph):
+        #     if x in DICT:
+        #         graph[i].add(str(DICT[x]))
+                
+        print(' <- '.join(graph))
+    # print(DICT)
     return g
 
 

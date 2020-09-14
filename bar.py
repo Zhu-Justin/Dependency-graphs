@@ -3,6 +3,5 @@ import os
 
 goodbye()
 
-
 def hello():
     print("goodbye")

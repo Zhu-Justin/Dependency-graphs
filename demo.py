@@ -32,7 +32,7 @@ print(libraries)
 functionmaps = sc.getfunctions(filename, homedirectory)
 print(functionmaps)
 g = sc.getgraph(filename, homedirectory, package)
-print(g)
+# print(g)
 
 # os.path.dirname()
 
