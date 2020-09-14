@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Justin Zhu
+# serenadecore -- core functions for graph dependency cli tool
 
 import os
 from tree_sitter import Language, Parser
@@ -10,15 +11,36 @@ from stdlib_list import stdlib_list
 PY_LANGUAGE = Language('build/my-languages.so', 'python')
 
 """
-Some global data structures
+LIBRARIES Contains all the packages imported from a file
+i.e. LIBRARIES[file1] == [package1, package2, package3]
+The packages can be imported in the following ways
+import package1 (singular)
+import package1, package2 (many)
+from package1 import * (where * is any attribute from
+package1)
+import package1 as pk1 (aliasing)
 """
-libraries = {}
-# DICT Contains all the function inherited from that module
-# i.e. DICT[module] == [func1, func2, func3]
-# module.func1, module.func2, module.func3 have been called
-# in the file or any of its dependencies
+LIBRARIES = {}
+
+"""
+DICT Contains all the function inherited from that module
+i.e. DICT[module] == [func1, func2, func3]
+module.func1, module.func2, module.func3 have been called
+in the file or any of its dependencies
+"""
 DICT = {}
-alias = {}
+
+"""
+ALIAS Contains all the aliased packages mappings
+i.e. ALIAS[alias] == [fullname]
+ALIAS['np'] == 'numpy'
+ALIAS['pandas'] == 'pd'
+For now, this code will only work if there's one alias per package
+Multiple aliasing will use the most recently alias, i.e. the
+alias that is deepest from the root node in the dependency
+graph, which may give some undefined behavior
+"""
+ALIAS = {}
 
 
 def getcode(filename, DEBUG=False):
@@ -56,10 +78,10 @@ def getalias(node, lines, filename, DEBUG=False):
                 cs, ce = c.start_point, c.end_point
                 assert cs[0] == ce[0]
                 cf = (lines[cs[0]][cs[1]:ce[1]])
-                if filename not in libraries:
-                    libraries[filename] = []
-                if cf not in libraries[filename]:
-                    libraries[filename].append(cf)
+                if filename not in LIBRARIES:
+                    LIBRARIES[filename] = []
+                if cf not in LIBRARIES[filename]:
+                    LIBRARIES[filename].append(cf)
             if c.type == "aliased_import":
                 for c1 in c.children:
                     if c1.type == "dotted_name":
@@ -67,15 +89,15 @@ def getalias(node, lines, filename, DEBUG=False):
                         assert cs[0] == ce[0]
                         cf = (lines[cs[0]][cs[1]:ce[1]])
                         p = cf
-                        if filename not in libraries:
-                            libraries[filename] = []
-                        if cf not in libraries[filename]:
-                            libraries[filename].append(cf)
+                        if filename not in LIBRARIES:
+                            LIBRARIES[filename] = []
+                        if cf not in LIBRARIES[filename]:
+                            LIBRARIES[filename].append(cf)
                     if c1.type == "identifier":
                         cs, ce = c1.start_point, c1.end_point
                         assert cs[0] == ce[0]
                         cf = (lines[cs[0]][cs[1]:ce[1]])
-                        alias[cf] = p
+                        ALIAS[cf] = p
 
     if node.type == "import_from_statement":
 
@@ -93,10 +115,10 @@ def getalias(node, lines, filename, DEBUG=False):
                 cf = (lines[cs[0]][cs[1]:ce[1]])
                 if not foundlib:
                     p1 = cf
-                    if filename not in libraries:
-                        libraries[filename] = []
-                    if cf not in libraries[filename]:
-                        libraries[filename].append(cf)
+                    if filename not in LIBRARIES:
+                        LIBRARIES[filename] = []
+                    if cf not in LIBRARIES[filename]:
+                        LIBRARIES[filename].append(cf)
                 else:
                     if p1 not in DICT:
                         DICT[p1] = []
@@ -115,7 +137,7 @@ def getalias(node, lines, filename, DEBUG=False):
 
         for c in node.children:
             getalias(c, lines, filename)
-    return alias
+    return ALIAS
 
 
 def getlibraries(filename, DEBUG=False):
@@ -141,16 +163,16 @@ def getlibraries(filename, DEBUG=False):
             if DEBUG:
                 print(importline)
 
-            if filename not in libraries:
-                libraries[filename] = []
+            if filename not in LIBRARIES:
+                LIBRARIES[filename] = []
                 homedir = '.'.join(filename.split('/')[:-1])
                 if '.' in homedir:
                     importline = homedir+'.'+importline
 
-            if importline not in libraries:
-                libraries[filename].append(importline)
+            if importline not in LIBRARIES:
+                LIBRARIES[filename].append(importline)
 
-    return libraries
+    return LIBRARIES
 
 
 def package2file(package, DEBUG=False):
@@ -180,13 +202,13 @@ def file2package(file, DEBUG=False):
 
 def recurse(filename, directory, identifier, DEBUG=False):
     path = os.path.join(directory, filename)
-    libraries = getlibraries(path)
+    LIBRARIES = getlibraries(path)
     getfunctions(filename, directory)
     key = package2file(identifier)
 
     if DEBUG:
         print("Latest library")
-        print(libraries)
+        print(LIBRARIES)
         print("Params")
         print(identifier)
         print(directory)
@@ -194,8 +216,8 @@ def recurse(filename, directory, identifier, DEBUG=False):
         print("KEY")
         print(key)
 
-    if key in libraries:
-        for i, l in enumerate(libraries[key]):
+    if key in LIBRARIES:
+        for i, l in enumerate(LIBRARIES[key]):
             library = '/'.join(l.split('.'))
             suffix = '.py'
             path = os.path.join(directory, library + suffix)
@@ -208,7 +230,7 @@ def recurse(filename, directory, identifier, DEBUG=False):
 
             if os.path.isfile(path):
                 directory, filename = os.path.split(path)
-                libraries = recurse(filename, directory, l)
+                LIBRARIES = recurse(filename, directory, l)
 
                 if DEBUG:
                     print("path exists")
@@ -216,7 +238,7 @@ def recurse(filename, directory, identifier, DEBUG=False):
                     print("dir"+directory)
                     print("file"+filename)
 
-    return libraries
+    return LIBRARIES
 
 
 def traverse(node, lines, directory, filename, DEBUG=False):
@@ -258,8 +280,8 @@ def traverse(node, lines, directory, filename, DEBUG=False):
                 print(objx)
                 print(funx)
 
-            if objx in alias:
-                objx = alias[objx]
+            if objx in ALIAS:
+                objx = ALIAS[objx]
             if objx not in DICT and objx:
                 DICT[objx] = []
 
@@ -364,7 +386,7 @@ def getfunctions(filename, directory, DEBUG=False):
 
 
 def getgraph(filename, directory, identifier, DEBUG=False):
-    libraries = recurse(filename, directory, identifier)
+    LIBRARIES = recurse(filename, directory, identifier)
     path = os.path.join(directory, filename)
     DFS = []
     stack = [path]
@@ -384,9 +406,9 @@ def getgraph(filename, directory, identifier, DEBUG=False):
 
         graphs.append(x)
 
-        if s in libraries and s not in stack: 
+        if s in LIBRARIES and s not in stack: 
             intermediary.add(file2package(s))
-            for c in libraries[s]:
+            for c in LIBRARIES[s]:
                 stack.append(package2file(c))
         else:
             x = graphs.pop()
