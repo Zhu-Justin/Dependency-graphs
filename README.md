@@ -15,14 +15,16 @@ A few things to note:
 # Getting started
 
 ```
-git clone https://github.com/Zhu-Justin/Dependency-graphs.git $HOME
+git clone https://github.com/Zhu-Justin/Dependency-graphs.git /path/to/repo
 
-$HOME/demo.py /path/to/pythoncode.py
+cd /path/to/repo
+
+./demo.py /path/to/pythoncode.py
 ```
 
 
 # Getting help
 ```
-/path/to/demo.py  -h
+./demo.py  -h
 ```
 
