@@ -393,6 +393,18 @@ def traverse(node, lines, directory, filename, DEBUG=False):
             print(node.children)
         for c in node.children:
             traverse(c, lines, directory, filename)
+
+    if node.type == "assignment":
+        left = node.child_by_field_name('left')
+        right = node.child_by_field_name('right')
+        if DEBUG:
+            print("left")
+            print(left.children)
+            print("right")
+            print(right.children)
+        for c in right.children:
+            traverse(c, lines, directory, filename)
+
     return DICT
 
 
@@ -417,7 +429,9 @@ def getfunctions(filename, directory, DEBUG=False):
     return x
 
 
-def getgraph(filename, directory, identifier, DEBUG=False):
+def getgraph(filename, directory, identifier, DEBUG=False,
+             hasused=True, hasstdlib=True, hasstdsub=True,
+             nopretty=False):
     """
     Get the graph using DICT, LIBRARIES, and ALIAS values
     """
@@ -458,9 +472,10 @@ def getgraph(filename, directory, identifier, DEBUG=False):
         if s not in DFS:
             DFS.append(s)
 
-    def prettygraph(g, DEBUG=False):
+    def prettygraph(g, hasused, hasstdlib, hasstdsub, DEBUG=False):
         """
         Prettify the graph according to desired specs
+        To turn this off, nopretty=False
         """
         for graph in g:
             if DEBUG:
@@ -470,11 +485,19 @@ def getgraph(filename, directory, identifier, DEBUG=False):
             i = -1
             x = graph[i]
             stdlib = stdlib_list("3.8")
-            if graph[i] in stdlib:
-                graph[i] += " (stdlib)"
-            if x in DICT:
+            if x in stdlib:
+                xs = ['.'.join(str(k).split('.')[1:]+v) 
+                      for k, v in DICT.items() 
+                      if x in str(k).lower()]
+                if len(xs) > 0 and hasstdsub:
+                    graph[i] += " " + str(xs)
+                if hasstdlib:
+                    graph[i] += " (stdlib)"
+                if len(xs) == 0 and hasused:
+                    graph[i] += " (unused)"
+            elif x in DICT:
                 graph[i] = graph[i]+" "+str(DICT[x])
-            else:
+            elif hasused:
                 graph[i] += " (unused)"
 
             if DEBUG:
@@ -484,5 +507,6 @@ def getgraph(filename, directory, identifier, DEBUG=False):
 
             print(' <- '.join(graph[::-1]))
 
-    prettygraph(g)
+    if not nopretty:
+        prettygraph(g, hasused, hasstdlib, hasstdsub)
     return g

@@ -101,8 +101,9 @@ print("===============")
 # print(root_node.sexp())
 
 
-code = getcode('samplecode.py')
 code = getcode('importbonanza.py')
+code = getcode('demo.py')
+code = getcode('samplecode.py')
 lines = code.split('\n')
 tree = parser.parse(bytes(code, "utf8"))
 root_node = tree.root_node

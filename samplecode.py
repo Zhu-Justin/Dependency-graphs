@@ -1,21 +1,29 @@
-import bar
-bar.hello(bar.newperson())
-sys.exit(1)
+import os
+import argparse
 
-def one():
-    return
+argparser = argparse.ArgumentParser(description='Get Dependency Graphs')
+argparser.add_argument('filename')
+args = argparser.parse_args()
 
-def hello(x=bar.bob()):
-    print("Hello")
-    bar.wow(bar.newperson())
-    cool()
-    return
+homedirectory, filename = os.path.split(args.filename)
+# import bar
+# bar.hello(bar.newperson())
+# sys.exit(1)
 
-def goodbye():
-    print("Hello")
-    bar.hello(bar.newperson())
-    return
-import sys
+# def one():
+#     return
+
+# def hello(x=bar.bob()):
+#     print("Hello")
+#     bar.wow(bar.newperson())
+#     cool()
+#     return
+
+# def goodbye():
+#     print("Hello")
+#     bar.hello(bar.newperson())
+#     return
+# import sys
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
