@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Justin Zhu
+# test.py scratchwork
+
 import os
 
 from tree_sitter import Language, Parser

@@ -44,6 +44,9 @@ ALIAS = {}
 
 
 def getcode(filename, DEBUG=False):
+    """
+    Get the python code as a string from file
+    """
 
     if DEBUG:
         filename = 'samplecode.py'
@@ -54,6 +57,9 @@ def getcode(filename, DEBUG=False):
 
 
 def gettree(filename, DEBUG=False):
+    """
+    Get the tree_sitter data from a file
+    """
     code = getcode(filename)
     parser = Parser()
     parser.set_language(PY_LANGUAGE)
@@ -67,6 +73,9 @@ def gettree(filename, DEBUG=False):
 
 
 def getalias(node, lines, filename, DEBUG=False):
+    """
+    Get alias mappings for a file
+    """
     if node.type == "import_statement":
 
         if DEBUG:
@@ -141,6 +150,9 @@ def getalias(node, lines, filename, DEBUG=False):
 
 
 def getlibraries(filename, DEBUG=False):
+    """
+    Get library mappings for a file
+    """
     code = getcode(filename)
     lines = code.split('\n')
     tree = gettree(filename)
@@ -176,6 +188,9 @@ def getlibraries(filename, DEBUG=False):
 
 
 def package2file(package, DEBUG=False):
+    """
+    Convert python package name into UNIX file name
+    """
     library = '/'.join(package.split('.'))
     suffix = '.py'
     path = os.path.join(library + suffix)
@@ -187,6 +202,9 @@ def package2file(package, DEBUG=False):
 
 
 def file2package(file, DEBUG=False):
+    """
+    Convert UNIX file name into python package name
+    """
     homedir = '.'.join(file.split('/'))
 
     if DEBUG:
@@ -201,6 +219,10 @@ def file2package(file, DEBUG=False):
 
 
 def recurse(filename, directory, identifier, DEBUG=False):
+    """
+    Recurse file structure, updating LIBRARIES with dependencies 
+    """
+
     path = os.path.join(directory, filename)
     LIBRARIES = getlibraries(path)
     getfunctions(filename, directory)
@@ -242,6 +264,10 @@ def recurse(filename, directory, identifier, DEBUG=False):
 
 
 def traverse(node, lines, directory, filename, DEBUG=False):
+    """
+    Traverse the tree, updating DICT with function mappings
+    """
+
     global DICT
     if node.type == "call":
 
@@ -368,6 +394,9 @@ def traverse(node, lines, directory, filename, DEBUG=False):
 
 
 def getfunctions(filename, directory, DEBUG=False):
+    """
+    Traverse the tree, updating DICT with function mappings
+    """
 
     path = os.path.join(directory, filename)
     code = getcode(path)
@@ -386,6 +415,9 @@ def getfunctions(filename, directory, DEBUG=False):
 
 
 def getgraph(filename, directory, identifier, DEBUG=False):
+    """
+    Get the graph using DICT, LIBRARIES, and ALIAS
+    """
     LIBRARIES = recurse(filename, directory, identifier)
     path = os.path.join(directory, filename)
     DFS = []
@@ -417,13 +449,16 @@ def getgraph(filename, directory, identifier, DEBUG=False):
                 print(x)
                 print(intermediary)
 
-            if x[::-1] not in g and x[-1] not in intermediary:
-                g.append(x[::-1])
+            if x not in g and x[-1] not in intermediary:
+                g.append(x)
 
         if s not in DFS:
             DFS.append(s)
 
     def prettygraph(g, DEBUG=False):
+        """
+        Prettify the graph according to desired specs
+        """
         for graph in g:
             if DEBUG:
                 print(graph)
