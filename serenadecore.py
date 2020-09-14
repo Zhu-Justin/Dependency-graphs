@@ -156,27 +156,31 @@ def getlibraries(path, filename, directory, DEBUG=False):
     """
     Get library mappings for a file
     """
-    print("GET LIBS")
-    # print("PATH")
-    # print(path)
-    # print(filename)
-    # print(directory)
+    if DEBUG:
+        print("GET LIBS")
+        print("PATH")
+        print(path)
+        print(filename)
+        print(directory)
     code = getcode(os.path.join(path, directory), filename)
     lines = code.split('\n')
     tree = gettree(os.path.join(path, directory), filename)
     root_node = tree.root_node
     getalias(root_node, lines, filename)
-    key = filename
+    # key = filename
     if directory:
         # filename = '.'.join(directory.split('/'))+'.'+filename
-        key = '/'.join(directory.split('.'))+'/'+filename
+        filename = '/'.join(directory.split('.'))+'/'+filename
+    filename = filename.replace(path+'/', '')
 
     if DEBUG:
         print(root_node.sexp())
         dir(root_node)
         dir(tree)
-    print("FILENAME")
-    print(key)
+        print("PATH")
+        print(path)
+        print("FILENAME")
+        print(filename)
 
     for c in root_node.children:
         if c.type == "import_statement" or c.type == "import_from_statement":
@@ -188,21 +192,20 @@ def getlibraries(path, filename, directory, DEBUG=False):
 
             if DEBUG:
                 print(importline)
+                print("KEY2")
+                print(filename)
 
-            print("KEY2")
-            print(key)
-            if key not in LIBRARIES:
-                LIBRARIES[key] = []
-                homedir = '.'.join(key.split('/')[:-1])
-                print("HOMEDIR")
+            if filename not in LIBRARIES:
+                LIBRARIES[filename] = []
+                homedir = '.'.join(filename.split('/')[:-1])
                 if '.' in homedir:
                     importline = homedir+'.'+importline
-                print(importline)
 
-            if importline not in LIBRARIES[key]:
-                print("ADDED "+key)
-                print(importline)
-                LIBRARIES[key].append(importline)
+            if importline not in LIBRARIES[filename]:
+                if DEBUG:
+                    print("ADDED "+filename)
+                    print(importline)
+                LIBRARIES[filename].append(importline)
 
     return LIBRARIES
 
@@ -242,25 +245,27 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
     """
     Recurse file structure, updating LIBRARIES with dependencies 
     """
-    # if DEBUG:
-    print("NEW RECURSE")
-    print(filename)
-    print(directory)
-    print(identifier)
+    if DEBUG:
+        print("NEW RECURSE")
+        print(filename)
+        print(directory)
+        print(identifier)
+        newpath = os.path.join(path, directory)
 
-    newpath = os.path.join(path, directory)
     LIBRARIES = getlibraries(path, filename, directory)
-    print("AFTER Libraries")
-
-    # print("BEFORE GET FUNCTIONS")
-    # print(path)
-    # print(directory)
-    getfunctions(path, filename, directory)
-    key = package2file(identifier)
-    print("KEY")
-    print(key)
 
     if DEBUG:
+        print("AFTER Libraries")
+        print("BEFORE GET FUNCTIONS")
+        print(path)
+        print(directory)
+
+    getfunctions(path, filename, directory)
+    key = package2file(identifier)
+
+    if DEBUG:
+        print("KEY")
+        print(key)
         print("Latest library")
         print(LIBRARIES)
         print("Params")
@@ -272,16 +277,14 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
 
     if key in LIBRARIES:
         for i, l in enumerate(LIBRARIES[key]):
-            print(i)
-            print(l)
             library = '/'.join(l.split('.'))
             suffix = '.py'
             file = os.path.join(path, library + suffix)
-            print("file")
-            print("what")
-            print(file)
 
             if DEBUG:
+                print("file")
+                print("what")
+                print(file)
                 print('Loop ' + i)
                 print(l)
                 print("Path")
@@ -289,18 +292,14 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
 
             if os.path.isfile(file):
                 directory, filename = os.path.split(file)
-                # print("BEFORE")
-                # print(directory)
                 directory = directory.replace(path+'/', '')
-                # print("AFTER")
-                # print(directory)
                 LIBRARIES = recurse(path, filename, directory, l)
 
-                # if DEBUG:
-                print("path exists")
-                print(path)
-                print("dir"+directory)
-                print("file"+filename)
+                if DEBUG:
+                    print("path exists")
+                    print(path)
+                    print("dir"+directory)
+                    print("file"+filename)
 
     return LIBRARIES
 
@@ -309,11 +308,12 @@ def traverse(node, lines, directory, filename, DEBUG=False):
     """
     Traverse the tree, updating DICT with function mappings
     """
-    # print(lines)
     global DICT
-    # print(directory)
-    # print(filename)
-    # print(DICT)
+    if DEBUG:
+        print(lines)
+        print(directory)
+        print(filename)
+        print(DICT)
 
     if node.type == "call":
 
@@ -406,9 +406,12 @@ def traverse(node, lines, directory, filename, DEBUG=False):
         if 0 not in DICT:
             DICT[0] = []
         if funx in DICT[0]:
-            print("FILENAME")
-            print(filename)
-            print(directory)
+
+            if DEBUG:
+                print("FILENAME")
+                print(filename)
+                print(directory)
+
             key = file2package(filename)
             if directory:
                 key = directory + '.' + key
@@ -477,8 +480,10 @@ def getfunctions(path, filename, directory, DEBUG=False):
         print(DICT)
 
     getalias(tree.root_node, lines, filename)
-    # print("DIRECTORY")
-    # print(directory)
+
+    if DEBUG:
+        print("DIRECTORY")
+        print(directory)
     x = traverse(tree.root_node, lines, directory, filename)
     return x
 
@@ -563,6 +568,5 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
 
     if not nopretty:
         prettygraph(g, hasused, hasstdlib, hasstdsub)
-    # print(DICT)
-    print(LIBRARIES)
+
     return g

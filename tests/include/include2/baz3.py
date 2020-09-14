@@ -1,1 +1,1 @@
-include baz4
+print("Hello, world!")
