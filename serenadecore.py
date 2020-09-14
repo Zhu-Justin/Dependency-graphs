@@ -12,6 +12,12 @@ CHARIDX = 1
 
 libraries = {}
 graph = []
+# DICT Contains all the function inherited from that module
+# i.e. DICT[module] == [func1, func2, func3]
+# module.func1, module.func2, module.func3 have been called
+# in the file or any of its dependencies
+
+
 DICT = {}
 alias = {}
 
@@ -213,7 +219,14 @@ def getfunctions(filename, directory):
             # print(parameters)
             # print("Name")
             if funx in DICT[0]:
-                DICT[file2package(filename)] = funx
+                key = file2package(filename)
+                if directory:
+                    key = directory + '.' + key
+                print(key)
+                if key not in DICT:
+                    DICT[key] = []
+                if funx not in DICT[key]:
+                    DICT[key].append(funx)
 
             for c in parameters.children:
                 if c.type == "default_parameter":
@@ -258,7 +271,6 @@ def getfunctions(filename, directory):
     # print(x)
     return x
 
-
 def getgraph(filename, directory, identifier):
     libraries = recurse(filename, directory, identifier)
     path = os.path.join(directory, filename)
@@ -274,15 +286,15 @@ def getgraph(filename, directory, identifier):
         x = list(graphs[-1])
         x.append(file2package(s))
         # print(x)
-        print("GRAPHS")
-        print(graphs)
+        # print("GRAPHS")
+        # print(graphs)
         graphs.append(x)
-        print("S")
-        print(s)
+        # print("S")
+        # print(s)
         # graphs.append(graphs[-1].append(s))
         # if s in libraries and s not in DFS:
         if s in libraries and s not in stack: 
-            print("ADDED" + file2package(s))
+            # print("ADDED" + file2package(s))
             intermediary.add(file2package(s))
             # oldgraphs = list(graphs)
             # oldso = list(oldgraphs[-1])
@@ -309,9 +321,9 @@ def getgraph(filename, directory, identifier):
             # graphs.pop()
         else:
             x = graphs.pop()
-            print("GOOD X")
-            print(x)
-            print(intermediary)
+            # print("GOOD X")
+            # print(x)
+            # print(intermediary)
             if x[::-1] not in g and x[-1] not in intermediary:
                 g.append(x[::-1])
             # if x not in g:
@@ -320,23 +332,25 @@ def getgraph(filename, directory, identifier):
         # graphs.pop()
         #     print(graphs)
         #     DFS.pop()
-    for graph in g:
-        # print(graph)
-        if not graph:
-            continue
-        x = graph[0]
-        stdlib = stdlib_list("3.8")
-        if graph[0] in stdlib:
-            graph[0] += " (stdlib)"
-        if x in DICT:
-            graph[0] = graph[0]+" "+str(DICT[x])
-        else:
-            graph[0] += " (unused)"
-        # for x, i in enumerate(graph):
-        #     if x in DICT:
-        #         graph[i].add(str(DICT[x]))
-                
-        print(' <- '.join(graph))
+    def prettygraph(g):
+        for graph in g:
+            # print(graph)
+            if not graph:
+                continue
+            x = graph[0]
+            stdlib = stdlib_list("3.8")
+            if graph[0] in stdlib:
+                graph[0] += " (stdlib)"
+            if x in DICT:
+                graph[0] = graph[0]+" "+str(DICT[x])
+            else:
+                graph[0] += " (unused)"
+            # for x, i in enumerate(graph):
+            #     if x in DICT:
+            #         graph[i].add(str(DICT[x]))
+                    
+            print(' <- '.join(graph))
+    prettygraph(g)
     # print(DICT)
     return g
 

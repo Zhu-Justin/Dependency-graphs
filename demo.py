@@ -27,10 +27,10 @@ homedirectory, filename = os.path.split(args.filename)
 
 package = filename.split('.')[0]
 libraries = sc.recurse(filename, homedirectory, package)
-print("Recurse Function works?")
-print(libraries)
+# print("Recurse Function works?")
+# print(libraries)
 functionmaps = sc.getfunctions(filename, homedirectory)
-print(functionmaps)
+# print(functionmaps)
 g = sc.getgraph(filename, homedirectory, package)
 # print(g)
 
