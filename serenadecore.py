@@ -134,7 +134,7 @@ def getalias(node, lines, filename, DEBUG=False):
                     if cf not in DICT[p1]:
 
                         if DEBUG:
-                            print("ADDING " + cf +" in "+p1)
+                            print("ADDING " + cf + " in "+p1)
                             print(DICT)
 
                         DICT[p1].append(cf)
@@ -276,7 +276,8 @@ def traverse(node, lines, directory, filename, DEBUG=False):
             print("callchildren")
             print(node.children)
 
-        attribute, argument_list = node.child_by_field_name('function'), node.child_by_field_name('arguments')
+        nc = node.child_by_field_name
+        attribute, argument_list = nc('function'), nc('arguments')
         assert argument_list.type == "argument_list"
 
         if DEBUG:
@@ -338,7 +339,9 @@ def traverse(node, lines, directory, filename, DEBUG=False):
         if DEBUG:
             print(node.children)
 
-        name, parameters, body = node.child_by_field_name('name'), node.child_by_field_name('parameters'), node.children[-1]
+        nc = node.child_by_field_name
+        nchild = node.children
+        name, parameters, body = nc('name'), nc('parameters'), nchild[-1]
         funs, fune = name.start_point, name.end_point
         assert funs[0] == fune[0]
         funx = (lines[funs[0]][funs[1]:fune[1]])
@@ -416,7 +419,7 @@ def getfunctions(filename, directory, DEBUG=False):
 
 def getgraph(filename, directory, identifier, DEBUG=False):
     """
-    Get the graph using DICT, LIBRARIES, and ALIAS
+    Get the graph using DICT, LIBRARIES, and ALIAS values
     """
     LIBRARIES = recurse(filename, directory, identifier)
     path = os.path.join(directory, filename)
@@ -425,7 +428,7 @@ def getgraph(filename, directory, identifier, DEBUG=False):
     graphs = [[]]
     intermediary = set()
     g = [[]]
-    
+
     while len(stack) != 0:
         s = stack.pop()
         x = list(graphs[-1])
@@ -438,7 +441,7 @@ def getgraph(filename, directory, identifier, DEBUG=False):
 
         graphs.append(x)
 
-        if s in LIBRARIES and s not in stack: 
+        if s in LIBRARIES and s not in stack:
             intermediary.add(file2package(s))
             for c in LIBRARIES[s]:
                 stack.append(package2file(c))
@@ -464,21 +467,22 @@ def getgraph(filename, directory, identifier, DEBUG=False):
                 print(graph)
             if not graph:
                 continue
-            x = graph[0]
+            i = -1
+            x = graph[i]
             stdlib = stdlib_list("3.8")
-            if graph[0] in stdlib:
-                graph[0] += " (stdlib)"
+            if graph[i] in stdlib:
+                graph[i] += " (stdlib)"
             if x in DICT:
-                graph[0] = graph[0]+" "+str(DICT[x])
+                graph[i] = graph[i]+" "+str(DICT[x])
             else:
-                graph[0] += " (unused)"
+                graph[i] += " (unused)"
 
             if DEBUG:
                 for i, x in enumerate(graph):
                     if x in DICT:
                         print(str(DICT[x]))
-                    
-            print(' <- '.join(graph))
+
+            print(' <- '.join(graph[::-1]))
 
     prettygraph(g)
     return g
