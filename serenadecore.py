@@ -222,6 +222,9 @@ def recurse(filename, directory, identifier, DEBUG=False):
     """
     Recurse file structure, updating LIBRARIES with dependencies 
     """
+    print(filename)
+    print(directory)
+    print(identifier)
 
     path = os.path.join(directory, filename)
     LIBRARIES = getlibraries(path)
