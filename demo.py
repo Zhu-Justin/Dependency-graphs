@@ -12,7 +12,7 @@ argparser = argparse.ArgumentParser(description='Get Dependency Graphs')
 argparser.add_argument('filename', metavar='path', type=str, help='the path to file')
 argparser.add_argument("-f", "--functions", action="store_true", help="view function mapping")
 argparser.add_argument("-l", "--libraries", action="store_true", help="view dependency mapping")
-argparser.add_argument("-r", "--raw", action="store_true", help="view dependency mapping")
+argparser.add_argument("-r", "--raw", action="store_true", help="view graphs as a list")
 
 args = argparser.parse_args()
 homedirectory, filename = os.path.split(args.filename)
