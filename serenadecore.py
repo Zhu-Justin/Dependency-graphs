@@ -92,12 +92,14 @@ def package2file(package):
     return path
 
 
-def file2package(directory, filename):
-    homedir = '.'.join(directory.split('/')[:-1])
-    package = filename.split('.')[0]
-    if '.' in homedir:
-        package = homedir+'.'+package
-    return package
+def file2package(file):
+    # homedir = '.'.join(file.split('/')[:-1])
+    homedir = '.'.join(file.split('/'))
+    # package = file.split('.')[0]
+    # if '.' in homedir:
+    #     package = homedir+'.'+package
+    # return package
+    return '.'.join(homedir.split('.')[:-1])
 
 
 def recurse(filename, directory, identifier):
@@ -249,22 +251,73 @@ def getfunctions(filename, directory):
 
 def getgraph(filename, directory, identifier):
     libraries = recurse(filename, directory, identifier)
-    graphs = []
-    stack = []
-    for k in libraries:
-        stack.add([k])
-        lib = k
-        while lib in libraries and lib not in stack[-1]:
-            package = libraries[lib]
-            stack[-1].add(package)
-            package2file(directory, package)
+    path = os.path.join(directory, filename)
+    DFS = []
+    stack = [path]
+    graphs = [[]]
+    g = [[]]
+    n = [0]
+    
+    while len(stack) != 0:
+        s = stack.pop()
+        x = list(graphs[-1])
+        x.append(file2package(s))
+        # print(x)
+        graphs.append(x)
+        # graphs.append(graphs[-1].append(s))
+        # if s in libraries and s not in DFS:
+        if s in libraries and s not in stack: 
+            # oldgraphs = list(graphs)
+            # oldso = list(oldgraphs[-1])
+            # n.append(len(graphs)-1)
+            for c in libraries[s]:
+                # so = graphs[-1]
+                # print("graphs")
+                # print(graphs)
+                # print("GO")
+                # print(so)
+                # print(type(so))
+                # so.append(c)
+                # graphs.append(so)
+                # print(list(so.append(c)))
+                # print("source")
+                # print(source)
+                # print("c")
+                # print(c)
+                # print("k")
+                # print(k)
+                # graphs.append(k)
+                stack.append(package2file(c))
+            # n.pop()
+            # graphs.pop()
+        else:
+            x = graphs.pop()
+            if x not in g:
+                g.append(x)
+        if s not in DFS:
+            DFS.append(s)
+        # graphs.pop()
+        #     print(graphs)
+        #     DFS.pop()
+    return g
 
-            # lib
 
-        # graphs.add(stack)
+#     for k in libraries:
+#         stack.add([k])
+#         lib = k
+#         while stack:
+#             while lib in libraries and lib not in stack[-1]:
+#                 for package in libraries[lib]:
+#                     # package = libraries[lib]
+#                     newpack = stack[-1].add(package)
+#                     stack.add(newpack)
+#                     lib = package2file(package)
+#             graphs.add(stack.pop())
+#             # lib
+#         # graphs.add(stack)
 
-    while len(stack) > 0:
-       graphs 
+#     while len(stack) > 0:
+#        graphs 
 
 
 

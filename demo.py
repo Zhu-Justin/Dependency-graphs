@@ -31,6 +31,8 @@ print("Recurse Function works?")
 print(libraries)
 functionmaps = sc.getfunctions(filename, homedirectory)
 print(functionmaps)
+g = sc.getgraph(filename, homedirectory, package)
+print(g)
 
 # os.path.dirname()
 
