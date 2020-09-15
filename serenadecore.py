@@ -174,13 +174,13 @@ def getlibraries(path, filename, directory, identifier, DEBUG=False):
     library = '/'.join(identifier.split('.'))
     suffix = '.py'
     # file = os.path.join(path, library + suffix)
-    print("BEFORE")
-    print(identifier)
-    print(filename)
+    # print("BEFORE")
+    # print(identifier)
+    # print(filename)
     # filename = os.path.join(path, directory, library + suffix)
     filename = library + suffix
-    print("AFTER")
-    print(filename)
+    # print("AFTER")
+    # print(filename)
 
     if DEBUG:
         print(root_node.sexp())
