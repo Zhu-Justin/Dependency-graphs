@@ -10,8 +10,10 @@ import serenadecore as sc
 
 argparser = argparse.ArgumentParser(description='Get Dependency Graphs')
 argparser.add_argument('filename', metavar='path', type=str, help='the path to file')
-argparser.add_argument("-f", "--functions", action="store_true", help="view function mapping")
-argparser.add_argument("-l", "--libraries", action="store_true", help="view dependency mapping")
+argparser.add_argument("-f", "--functions",
+                       action="store_true", help="view function mapping for provided file")
+argparser.add_argument("-F", "--functionsall", action="store_true", help="view all function mappings")
+argparser.add_argument("-l", "--libraries", action="store_true", help="view dependency mapping of libraries")
 argparser.add_argument("-r", "--raw", action="store_true", help="view graphs as a list")
 
 args = argparser.parse_args()
@@ -27,7 +29,8 @@ if args.functions:
     functions = sc.getfunctions(homedirectory, filename, '')
     print(functions)
 
-graphs = sc.getgraph(homedirectory, filename, '', package, nopretty=args.raw)
+graphs = sc.getgraph(homedirectory, filename, '', package, nopretty=args.raw,
+                     allfunctions=args.functionsall)
 if args.raw:
     print(graphs)
 

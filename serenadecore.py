@@ -308,7 +308,7 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
                 directory = directory.replace(path+'/', '')
                 # print("FILE")
                 # print(path+directory+filename)
-                getfunctions(path, filename, directory)
+                getfunctions(path, filename, directory, l)
                 # print(path)
                 # print(filename)
                 # print(directory)
@@ -326,7 +326,7 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
     return LIBRARIES
 
 
-def traverse(node, lines, directory, filename, DEBUG=False):
+def traverse(node, lines, directory, filename, identifier, DEBUG=False):
     """
     Traverse the tree, updating DICT with function mappings
     """
@@ -403,7 +403,7 @@ def traverse(node, lines, directory, filename, DEBUG=False):
             for argchild in childlist:
                 if argchild.type == "call":
                     DICT = traverse(argchild, lines,
-                                    directory, filename)
+                                    directory, filename, identifier)
 
     if node.type == "function_definition":
 
@@ -435,8 +435,9 @@ def traverse(node, lines, directory, filename, DEBUG=False):
                 print(directory)
 
             key = file2package(filename)
-            if directory:
-                key = directory + '.' + key
+            key = identifier
+            # if directory:
+            #     key = directory + '.' + key
             if key not in DICT:
                 DICT[key] = []
             if funx not in DICT[key]:
@@ -445,10 +446,10 @@ def traverse(node, lines, directory, filename, DEBUG=False):
         for c in parameters.children:
             if c.type == "default_parameter":
                 for c1 in c.children:
-                    traverse(c1, lines, directory, filename)
+                    traverse(c1, lines, directory, filename, identifier)
 
         for c in body.children:
-            traverse(c, lines, directory, filename)
+            traverse(c, lines, directory, filename, identifier)
 
             if DEBUG:
                 print("body2")
@@ -462,14 +463,14 @@ def traverse(node, lines, directory, filename, DEBUG=False):
                 print("parameters")
 
             values = parameters.child_by_field_name('values')
-            traverse(values, lines, directory, filename)
+            traverse(values, lines, directory, filename, identifier)
 
     if node.type == "module" or node.type == "expression_statement":
         if DEBUG:
             print("expression")
             print(node.children)
         for c in node.children:
-            traverse(c, lines, directory, filename)
+            traverse(c, lines, directory, filename, identifier)
 
     if node.type == "assignment":
         left = node.child_by_field_name('left')
@@ -485,10 +486,12 @@ def traverse(node, lines, directory, filename, DEBUG=False):
     return DICT
 
 
-def getfunctions(path, filename, directory, DEBUG=False):
+def getfunctions(path, filename, directory, identifier=None, DEBUG=False):
     """
     Traverse the tree, updating DICT with function mappings
     """
+    if not identifier:
+        identifier = file2package(filename)
     # print(os.path.join(path, directory, filename))
 
     fullpath = os.path.join(path, directory)
@@ -507,13 +510,13 @@ def getfunctions(path, filename, directory, DEBUG=False):
     if DEBUG:
         print("DIRECTORY")
         print(directory)
-    x = traverse(tree.root_node, lines, directory, filename)
+    x = traverse(tree.root_node, lines, directory, filename, identifier)
     return x
 
 
 def getgraph(path, filename, directory, identifier, DEBUG=False,
              hasused=True, hasstdlib=True, hasstdsub=True,
-             nopretty=False):
+             nopretty=False, allfunctions=False):
     """
     Get the graph using DICT, LIBRARIES, and ALIAS values
     """
@@ -607,6 +610,9 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
                         print(str(DICT[x]))
 
             print(' <- '.join(graph[::-1]))
+
+    if allfunctions:
+        print(DICT)
 
     if not nopretty:
         prettygraph(g, hasused, hasstdlib, hasstdsub)
