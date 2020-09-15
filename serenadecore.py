@@ -481,7 +481,7 @@ def traverse(node, lines, directory, filename, identifier, DEBUG=False):
             print("right")
             print(right.children)
         for c in right.children:
-            traverse(c, lines, directory, filename)
+            traverse(c, lines, directory, filename, identifier)
 
     return DICT
 
@@ -561,18 +561,21 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
         # print(s)
         # print(DFS)
         # print(graphs)
-            
-        # if s in LIBRARIES:
-        #     finishednode = True
-        #     for c in LIBRARIES[s]:
-        #         # print("Child")
-        #         # print(c)
-        #         if package2file(c) not in DFS:
-        #             finishednode = False
-        #     if finishednode:
-        #         # print("GOOD")
-        #         # print(graphs)
-        #         graphs.pop()
+        if len(graphs) > 2 and len(graphs[-1]) > 0:
+            lastnode = graphs[-1][-1]
+            s = package2file(lastnode)
+                
+            if s in LIBRARIES:
+                finishednode = True
+                for c in LIBRARIES[s]:
+                    # print("Child")
+                    # print(c)
+                    if package2file(c) not in DFS:
+                        finishednode = False
+                if finishednode:
+                    # print("GOOD")
+                    # print(graphs)
+                    graphs.pop()
         # print(graphs)
 
 
