@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Justin Zhu
 # serenadecore -- core functions for graph dependency cli tool
-
 import os
 from tree_sitter import Language, Parser
 from stdlib_list import stdlib_list
@@ -152,7 +151,7 @@ def getalias(node, lines, filename, DEBUG=False):
     return ALIAS
 
 
-def getlibraries(path, filename, directory, DEBUG=False):
+def getlibraries(path, filename, directory, identifier, DEBUG=False):
     """
     Get library mappings for a file
     """
@@ -168,10 +167,20 @@ def getlibraries(path, filename, directory, DEBUG=False):
     root_node = tree.root_node
     getalias(root_node, lines, filename)
     # key = filename
-    if directory:
-        # filename = '.'.join(directory.split('/'))+'.'+filename
-        filename = '/'.join(directory.split('.'))+'/'+filename
-    filename = filename.replace(path+'/', '')
+    # if directory:
+    #     # filename = '.'.join(directory.split('/'))+'.'+filename
+    #     filename = '/'.join(identifier.split('.'))+'/'+filename
+    # filename = filename.replace(path+'/', '')
+    library = '/'.join(identifier.split('.'))
+    suffix = '.py'
+    # file = os.path.join(path, library + suffix)
+    print("BEFORE")
+    print(identifier)
+    print(filename)
+    # filename = os.path.join(path, directory, library + suffix)
+    filename = library + suffix
+    print("AFTER")
+    print(filename)
 
     if DEBUG:
         print(root_node.sexp())
@@ -201,6 +210,8 @@ def getlibraries(path, filename, directory, DEBUG=False):
                 if '.' in homedir:
                     importline = homedir+'.'+importline
 
+            if package2file(importline) in LIBRARIES:
+                return LIBRARIES
             if importline not in LIBRARIES[filename]:
                 if DEBUG:
                     print("ADDED "+filename)
@@ -252,7 +263,8 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
         print(identifier)
         newpath = os.path.join(path, directory)
 
-    LIBRARIES = getlibraries(path, filename, directory)
+    LIBRARIES = getlibraries(path, filename, directory, identifier)
+    currentdirectory = directory
 
     if DEBUG:
         print("AFTER Libraries")
@@ -260,7 +272,6 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
         print(path)
         print(directory)
 
-    getfunctions(path, filename, directory)
     key = package2file(identifier)
 
     if DEBUG:
@@ -279,7 +290,8 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
         for i, l in enumerate(LIBRARIES[key]):
             library = '/'.join(l.split('.'))
             suffix = '.py'
-            file = os.path.join(path, library + suffix)
+            # file = os.path.join(path, library + suffix)
+            file = os.path.join(path, directory, library + suffix)
 
             if DEBUG:
                 print("file")
@@ -293,7 +305,14 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
             if os.path.isfile(file):
                 directory, filename = os.path.split(file)
                 directory = directory.replace(path+'/', '')
-                LIBRARIES = recurse(path, filename, directory, l)
+                getfunctions(path, filename, directory)
+                # print(path)
+                # print(filename)
+                # print(directory)
+                # print(LIBRARIES)
+                if package2file(l) not in LIBRARIES:
+                    LIBRARIES = recurse(path, filename, directory, l)
+                directory = currentdirectory
 
                 if DEBUG:
                     print("path exists")
@@ -514,7 +533,7 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
 
         graphs.append(x)
 
-        if s in LIBRARIES and s not in stack:
+        if s in LIBRARIES and s not in DFS:
             intermediary.add(file2package(s))
             for c in LIBRARIES[s]:
                 stack.append(package2file(c))

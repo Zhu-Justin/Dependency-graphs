@@ -1,3 +1,3 @@
 print("hello")
-import include.include2.baz3
-# import baz3
+import include2.baz3
+import baz3
