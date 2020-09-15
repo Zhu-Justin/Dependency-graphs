@@ -264,6 +264,7 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
         newpath = os.path.join(path, directory)
 
     LIBRARIES = getlibraries(path, filename, directory, identifier)
+    getfunctions(path, filename, directory)
     currentdirectory = directory
 
     if DEBUG:
@@ -305,13 +306,15 @@ def recurse(path, filename, directory, identifier, DEBUG=False):
             if os.path.isfile(file):
                 directory, filename = os.path.split(file)
                 directory = directory.replace(path+'/', '')
+                # print("FILE")
+                # print(path+directory+filename)
                 getfunctions(path, filename, directory)
                 # print(path)
                 # print(filename)
                 # print(directory)
                 # print(LIBRARIES)
-                if package2file(l) not in LIBRARIES:
-                    LIBRARIES = recurse(path, filename, directory, l)
+                # if package2file(l) not in LIBRARIES or file2package(filename) not in DICT:
+                LIBRARIES = recurse(path, filename, directory, l)
                 directory = currentdirectory
 
                 if DEBUG:
@@ -486,6 +489,7 @@ def getfunctions(path, filename, directory, DEBUG=False):
     """
     Traverse the tree, updating DICT with function mappings
     """
+    # print(os.path.join(path, directory, filename))
 
     fullpath = os.path.join(path, directory)
     code = getcode(fullpath, filename)
@@ -532,6 +536,8 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
             print(graphs)
 
         graphs.append(x)
+        # print("START")
+        # print(graphs)
 
         if s in LIBRARIES and s not in DFS:
             intermediary.add(file2package(s))
@@ -549,6 +555,23 @@ def getgraph(path, filename, directory, identifier, DEBUG=False,
 
         if s not in DFS:
             DFS.append(s)
+        # print(s)
+        # print(DFS)
+        # print(graphs)
+            
+        # if s in LIBRARIES:
+        #     finishednode = True
+        #     for c in LIBRARIES[s]:
+        #         # print("Child")
+        #         # print(c)
+        #         if package2file(c) not in DFS:
+        #             finishednode = False
+        #     if finishednode:
+        #         # print("GOOD")
+        #         # print(graphs)
+        #         graphs.pop()
+        # print(graphs)
+
 
     def prettygraph(g, hasused, hasstdlib, hasstdsub, DEBUG=False):
         """
