@@ -1,4 +1,4 @@
-# Serenade Graph Dependency Analyzer
+# Graph Dependency Analyzer
 This is a script I wrote that can identify the dependencies for each file in a codebase—using
 tree-sitter. It's a command-line utility that takes as an
 argument a path to some directory, as well as a file to analyze, and then
